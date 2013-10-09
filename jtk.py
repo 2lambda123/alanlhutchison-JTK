@@ -18,6 +18,11 @@ def main():
 
 
 def read_in(fn):
+    """Reads in a file in correct '#\tZTX_X\tZTX_X\tZTX_X\n geneID\tvalue\tvalue'
+       Returns a list of lists of lines with replicates combined
+       Correctly deals with the NA case:
+           If NA is part of a replicate, ignore from mean
+           If NA is alone or all replicates, propagate through to output"""
     updated = []
     with open(fn,'r') as f:
         master_match=[]
