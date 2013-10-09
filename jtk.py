@@ -21,12 +21,13 @@ def read_in(fn):
     with open(fn,'r') as f:
         master_match=[]
         for line in f:
-            print line
+            #print line
             words = line.strip().split()
             words=[word.strip() for word in words]
-            print words
+            #print words
             match_searched = []
             if words[0] =="#":
+                print words
                 for i in xrange(1,len(words)):
                     match_searched.append(i)
                     match = [i]
@@ -41,20 +42,26 @@ def read_in(fn):
                 print master_match
             else:
                 new = [words[0]]
-                print set([m for match in master_match for m in match])
+                #print set([m for match in master_match for m in match])
                 to_collapse = set([m for match in master_match for m in match])
-                for i in xrange(1,len(words)):
-                    if i in to_collapse:
-                        for match in master_match:
-                            if i in match:
-                                sum = 0
-                                for m in match:
-                                    sum += float(words[m])
-                                sum = sum / len(match)
-                                new.append(sum)
-                    else:
-                        new.append(words[i])
-    print "new is",new
+                to_check = set(range(1,len(words)))
+                for i in range(1,len(words)):
+                    if i in to_check:
+                        #print i,"is i here"
+                        #print to_collapse,"are indicies left"
+                        if i in to_collapse:
+                            for match in master_match:
+                                if i in match:
+                                    sum = 0
+                                    for m in match:
+                                        sum += float(words[m])
+                                    sum = sum / len(match)
+                                    new.append(sum)
+                                    to_collapse = to_collapse.difference(match)
+                                    to_check = to_check.difference(match)
+                        else:
+                            new.append(float(words[i]))
+                print "new is",new
 
 
 def combine_replicates():
