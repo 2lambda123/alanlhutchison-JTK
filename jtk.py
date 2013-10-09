@@ -14,19 +14,18 @@ import sys
 
 def main():
     fn=sys.argv[1]
-    read_in(fn)
+    updated = read_in(fn)
 
 
 def read_in(fn):
+    updated = []
     with open(fn,'r') as f:
         master_match=[]
         for line in f:
-            #print line
             words = line.strip().split()
             words=[word.strip() for word in words]
-            #print words
-            match_searched = []
             if words[0] =="#":
+                match_searched = []
                 print words
                 for i in xrange(1,len(words)):
                     match_searched.append(i)
@@ -36,39 +35,49 @@ def read_in(fn):
                             if words[i].split('_')[0] == words[j].split('_')[0]:
                                 match.append(j)
                                 match_searched.append(j)
-                                    
                     if len(match) > 1:
                         master_match.append(match)
                 print master_match
-            else:
-                new = [words[0]]
-                #print set([m for match in master_match for m in match])
-                to_collapse = set([m for match in master_match for m in match])
-                to_check = set(range(1,len(words)))
-                for i in range(1,len(words)):
-                    if i in to_check:
-                        #print i,"is i here"
-                        #print to_collapse,"are indicies left"
-                        if i in to_collapse:
-                            for match in master_match:
-                                if i in match:
-                                    sum = 0
+
+            new = [words[0]]
+            to_collapse = set([m for match in master_match for m in match])
+            to_check = set(range(1,len(words)))
+            for i in range(1,len(words)):
+                if i in to_check:
+                    if i in to_collapse:
+                        for match in master_match:
+                            if i in match:
+                                sum = 0
+                                if "ZT" in line:
+                                    sum = words[i].split('_')[0]
+                                else:
+                                    NAflag = 0
                                     for m in match:
-                                        sum += float(words[m])
-                                    sum = sum / len(match)
-                                    new.append(sum)
-                                    to_collapse = to_collapse.difference(match)
-                                    to_check = to_check.difference(match)
+                                        if words[m].strip()!="NA":
+                                            sum += float(words[m])
+                                        else:
+                                            NAflag += 1
+                                    if NAflag != len(match):
+                                        sum = sum / float(len(match)-NAflag)
+                                    elif NAflag==len(match): 
+                                        sum = "NA"
+                                new.append(sum)
+                                to_collapse = to_collapse.difference(match)
+                                to_check = to_check.difference(match)
+                    else:
+                        if "ZT" in line:
+                            new.append(words[i].split('_')[0])
                         else:
-                            new.append(float(words[i]))
-                print "new is",new
+                            if words[i]!="NA":
+                                new.append(float(words[i]))
+                            else:
+                                new.append(words[i])
+            #print "new is",new
+            updated.append(new)
+    for update in updated:
+        print update
+    return updated
 
-
-def combine_replicates():
-    pass
-"""
-If header has biological replicates, combine them in all lists, return list of lists
-"""    
 
 
 
