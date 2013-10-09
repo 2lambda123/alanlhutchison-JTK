@@ -9,13 +9,14 @@ Write a JTK that does the following:
 """
 
 from scipy.stats import kendalltau
+from operator import itemgetter
 import numpy as np
 import sys
 
 def main():
     fn=sys.argv[1]
     updated = read_in(fn)
-
+    header,list =organize_data(updated)
 
 def read_in(fn):
     """Reads in a file in correct '#\tZTX_X\tZTX_X\tZTX_X\n geneID\tvalue\tvalue'
@@ -86,16 +87,21 @@ def read_in(fn):
 
 
 
-def organize_data():
-    pass
-"""
-Organize list of lists from such that genes with similar time-series holes match (for null distribution calc)
-"""
+def organize_data(updated):
+    """
+    Organize list of lists from such that genes with similar time-series holes match (for null distribution calc)
+    Return a header ['#','ZTX','ZTY'...] and a list of lists [ lists with similar holes (identical null distribution) , [],[],[]] 
+    """
+    header = updated[0]
+    L = updated[1:]
 
-
-
-
-
+    for i in xrange(1,len(header)):
+        L=sorted(L, key=itemgetter(i))
+        
+    print header
+    for line in L:
+        print line
+    return header,L
 
 if __name__=="__main__":
     main()
