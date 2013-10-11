@@ -20,13 +20,13 @@ def main(args):
     waveform = args.function
     period = args.period
     phase = args.phase
+    eff_amp = 1
     updated = read_in(fn)
     header,series =organize_data(updated)
     reference = generate_base_reference(header,waveform,phase,period)
     for serie in series:
-        print serie
-        mod_reference = generate_mod_series(reference,serie)
-
+        geneID,tau,p = generate_mod_series(reference,serie)
+        print "{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}".format(geneID,waveform,period,phase,eff_amp,tau,p)
 def __create_parser__():
     p = argparse.ArgumentParser(
         description="python script runner for JTK_CYCLE statistical test",
@@ -107,7 +107,7 @@ def read_in(fn):
             words=[word.strip() for word in words]
             if words[0] =="#":
                 match_searched = []
-                print words
+                #print words
                 for i in xrange(1,len(words)):
                     match_searched.append(i)
                     match = [i]
@@ -118,7 +118,7 @@ def read_in(fn):
                                 match_searched.append(j)
                     if len(match) > 1:
                         master_match.append(match)
-                print master_match
+                #print master_match
 
             new = [words[0]]
             to_collapse = set([m for match in master_match for m in match])
@@ -189,8 +189,8 @@ def generate_base_reference(header,waveform="cosine",phase=0,period=24):
     for ZT in ZTs:
         z = ZT[2:]
         tpoints.append( (float(z)+float(phase) ) * coef)
-    print tpoints
-    print [tpoint/np.pi/2.0 for tpoint in tpoints]
+    #print tpoints
+    #print [tpoint/np.pi/2.0 for tpoint in tpoints]
 
     if waveform == "cosine":
         reference=np.cos(tpoints)
@@ -213,16 +213,23 @@ def generate_mod_series(reference,series):
     for each gene in data or uses the one previously calculated.
     Then it runs Kendall's Tau on the exp. series against the null
     """
+    geneID = series[0]
     values = series[1:]
     binary = [1 if value!="NA" else np.nan for value in values]
     temp = reference*binary
     mod_reference = [value for value in temp if not np.isnan(value)]
     mod_values = [value for value in values if value!='NA']
-    print reference
-    print temp
-    print mod_reference
-    print mod_values
-    return binary
+    #print reference
+    #print temp
+    #print mod_reference
+    #print mod_values
+    if len(mod_values) < 3:
+        tau,p = np.nan,np.nan
+    else:
+        tau,p=kendalltau(mod_values,mod_reference)
+
+    #print tau,p
+    return geneID,tau,p
 
 if __name__=="__main__":
     parser = __create_parser__()
