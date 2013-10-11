@@ -25,7 +25,7 @@ def main(args):
     reference = generate_base_reference(header,waveform,phase,period)
     for serie in series:
         print serie
-        mod_reference = generate_mod_reference(reference,serie)
+        mod_reference = generate_mod_series(reference,serie)
 
 def __create_parser__():
     p = argparse.ArgumentParser(
@@ -207,7 +207,7 @@ def generate_base_reference(header,waveform="cosine",phase=0,period=24):
     return reference
 
 
-def generate_mod_reference(reference,series):
+def generate_mod_series(reference,series):
     """
     Takes the series from generate_base_null, takes the list from data, and makes a null
     for each gene in data or uses the one previously calculated.
@@ -215,11 +215,13 @@ def generate_mod_reference(reference,series):
     """
     values = series[1:]
     binary = [1 if value!="NA" else np.nan for value in values]
-
-    print binary
+    temp = reference*binary
+    mod_reference = [value for value in temp if not np.isnan(value)]
+    mod_values = [value for value in values if value!='NA']
     print reference
-    print reference*binary
-
+    print temp
+    print mod_reference
+    print mod_values
     return binary
 
 if __name__=="__main__":
