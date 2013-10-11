@@ -7,16 +7,91 @@ Write a JTK that does the following:
 4) Takes the number of available points for a given gene and calculates the null distribution for that set of timepoints
 5) Calculates the Kendall's tau between the time points and the Null distribution
 """
-
+VERSION="0.0"
 from scipy.stats import kendalltau
 from operator import itemgetter
 import numpy as np
 import sys
+import argparse
 
-def main():
-    fn=sys.argv[1]
+
+def main(args):
+    fn = args.filename
+    waveform = args.function
+    period = args.period
+    phase = args.phase
     updated = read_in(fn)
-    header,list =organize_data(updated)
+    header,series =organize_data(updated)
+    reference = generate_base_reference(header,waveform,phase,period)
+    for serie in series:
+        print serie
+        mod_reference = generate_mod_reference(reference,serie)
+
+def __create_parser__():
+    p = argparse.ArgumentParser(
+        description="python script runner for JTK_CYCLE statistical test",
+        epilog="...",
+        version=VERSION
+        )
+
+                   
+    p.add_argument("-t", "--test",
+                   action='store_true',
+                   default=False,
+                   help="run the Python unittest testing suite")
+
+    p.add_argument("-f", "--file",
+                   dest="filename",
+                   action='store',
+                   metavar="FILENM",
+                   type=str,
+                   help="give a filename else this thang won't run")
+
+    analysis = p.add_argument_group(title="JTK_CYCLE analysis options")
+    analysis.add_argument("--function",
+                          dest="function",
+                          type=str,
+                          metavar="$FUNC_STR",
+                          action='store',
+                          default="cosine",
+                          choices=["cosine","rampup","rampdown","step","impulse"],
+                          help="cosine (dflt), rampup, rampdown, impulse, step")
+    analysis.add_argument("-w", "--width",
+                          dest="width",
+                          type=float,
+                          metavar="W",
+                          action='store',
+                          default=0.75,
+                          help="shape parameter for alt. waveforms \in [0,1]")
+    analysis.add_argument("-ph", "--phase",
+                          dest="phase",
+                          metavar="P",
+                          type=float,
+                          default=0.0,
+                          help="set phase of reference waveform (dflt: 0.0)")
+    analysis.add_argument("-p","--period",
+                         dest="period",
+                         metavar=float,
+                         type=float,
+                         action='store',
+                         help="set period to be searched")
+
+    
+    distribution = analysis.add_mutually_exclusive_group(required=False)
+    distribution.add_argument("-e", "--exact",
+                              dest="harding",
+                              action='store_true',
+                              default=False,
+                              help="use Harding's exact null distribution (dflt)")
+    distribution.add_argument("-n", "--normal",
+                              dest="normal",
+                              action='store_true',
+                              default=False,
+                              help="use normal approximation to null distribution")
+    
+    
+    return p
+
 
 def read_in(fn):
     """Reads in a file in correct '#\tZTX_X\tZTX_X\tZTX_X\n geneID\tvalue\tvalue'
@@ -80,8 +155,8 @@ def read_in(fn):
                                 new.append(words[i])
             #print "new is",new
             updated.append(new)
-    for update in updated:
-        print update
+#    for update in updated:
+#        print update
     return updated
 
 
@@ -97,11 +172,57 @@ def organize_data(updated):
 
     for i in xrange(1,len(header)):
         L=sorted(L, key=itemgetter(i))
-        
-    print header
-    for line in L:
-        print line
+
+#    print "Header is"
+#    print header
+#    for line in L:
+#        print line
     return header,L
 
+def generate_base_reference(header,waveform="cosine",phase=0,period=24):
+    """
+    This will generate a waveform with a given phase and period based on the header, 
+    """
+    tpoints = []
+    ZTs = header[1:]
+    coef = 2.0 * np.pi / float(period)
+    for ZT in ZTs:
+        z = ZT[2:]
+        tpoints.append( (float(z)+float(phase) ) * coef)
+    print tpoints
+    print [tpoint/np.pi/2.0 for tpoint in tpoints]
+
+    if waveform == "cosine":
+        reference=np.cos(tpoints)
+    elif waveform == "impulse":
+        reference=np.cos(tpoints)        
+    elif waveform == "rampup":
+        reference=np.cos(tpoints)
+    elif waveform == "rampdown":
+        reference=np.cos(tpoints)
+    elif waveform == "step":
+        reference=np.cos(tpoints)
+    
+
+    return reference
+
+
+def generate_mod_reference(reference,series):
+    """
+    Takes the series from generate_base_null, takes the list from data, and makes a null
+    for each gene in data or uses the one previously calculated.
+    Then it runs Kendall's Tau on the exp. series against the null
+    """
+    values = series[1:]
+    binary = [1 if value!="NA" else np.nan for value in values]
+
+    print binary
+    print reference
+    print reference*binary
+
+    return binary
+
 if __name__=="__main__":
-    main()
+    parser = __create_parser__()
+    args = parser.parse_args()
+    main(args)
